@@ -1,0 +1,96 @@
+version: "3.7"
+
+# Services
+services:
+  # Nginx Service
+  nginx:
+    build: ./.docker/nginx
+    ports:
+      - 80:80
+
+    volumes:
+      - ./src/api:/var/www/api:ro,delegated
+      - ./src/frontend:/var/www/frontend:ro,delegated
+      - ./src/app:/var/www/app:ro,delegated
+      - ./.docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - phpmyadmindata:/var/www/phpmyadmin:ro,delegated
+    depends_on:
+      - api
+      - app
+      - frontend
+      - phpmyadmin
+
+  # API Service
+  api:
+    build: ./src/api
+    ports:
+      - 9000:9000
+    working_dir: /var/www/api
+    volumes:
+      - ./src/api:/var/www/api:delegated
+    depends_on:
+      - mysql
+
+  # App Service
+  app:
+    build: ./src/app
+    # ports:
+    #   - 80:8080
+    working_dir: /var/www/app
+    volumes:
+      - ./src/app:/var/www/app:delegated
+    depends_on:
+      - api
+
+  # Frontend Service
+  frontend:
+    build: ./src/frontend
+    working_dir: /var/www/frontend
+    volumes:
+      - ./src/frontend:/var/www/frontend:delegated
+    # depends_on:
+    #   - api
+
+  # MySQL Service
+  mysql:
+    image: mysql:8
+    ports:
+      - 3307:3306
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: Alaki2020Japan
+      MYSQL_DATABASE: db_alaki_staff
+      MYSQL_USER: alakiapp
+      MYSQL_PASSWORD: AlakiStaffM2020Japan
+
+    volumes:
+      - ./.docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - mysqldata:/var/lib/mysql:delegated
+
+  # PhpMyAdmin Service
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5-fpm-alpine
+    environment:
+      PMA_HOST: mysql
+    volumes:
+      - phpmyadmindata:/var/www/html:delegated
+    depends_on:
+      - mysql
+
+  # Ngrok Service
+  # ngrok:
+  #   image: wernight/ngrok:latest
+  #   ports:
+  #     - 4040:4040
+  #   environment:
+  #     NGROK_PROTOCOL: http
+  #     NGROK_PORT: nginx:80
+  #     NGROK_AUTH: ${NGROK_AUTH}
+  #   depends_on:
+  #     - nginx
+
+# Volumes
+volumes:
+  mysqldata:
+
+  phpmyadmindata:
